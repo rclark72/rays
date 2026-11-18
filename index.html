@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ride Tracker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <h1>Ride Tracker</h1>
+    <label class="ride-pick">
+      <span>Ride</span>
+      <select id="rideSelect"></select>
+    </label>
+    <button id="editToggle" class="btn">Edit encodings</button>
+  </header>
+
+  <main class="stage">
+    <section class="video-wrap">
+      <div id="player"></div>
+    </section>
+    <section class="map-wrap">
+      <div id="map" class="map">
+        <img id="mapImg" src="map.png" alt="Trail map" draggable="false">
+        <svg id="overlay" viewBox="0 0 576 576" preserveAspectRatio="none">
+          <g id="pathLayer"></g>
+          <g id="keyLayer"></g>
+          <circle id="dotPulse" r="10"></circle>
+          <circle id="dot" r="8"></circle>
+        </svg>
+      </div>
+    </section>
+  </main>
+
+  <section id="editor" class="editor" hidden>
+    <div class="row">
+      <input id="urlInput" placeholder="YouTube URL or video ID" size="34">
+      <input id="newTitleInput" placeholder="Title (optional)" size="22">
+      <button id="addRide" class="btn">Add ride</button>
+      <span class="spacer"></span>
+      <button id="deleteRide" class="btn danger">Delete ride</button>
+    </div>
+
+    <div class="row">
+      <label>Title <input id="titleInput" size="28"></label>
+      <label>Between points
+        <select id="interpSelect">
+          <option value="catmull-rom">Smooth curve</option>
+          <option value="linear">Straight lines</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="row transport">
+      <button class="btn" data-step="-5" title="Shift+←">−5s</button>
+      <button class="btn" data-step="-1" title="←">−1s</button>
+      <button class="btn" data-step="-frame" title=",">−1f</button>
+      <button class="btn primary" id="playPause" title="K">Play / Pause</button>
+      <button class="btn" data-step="frame" title=".">+1f</button>
+      <button class="btn" data-step="1" title="→">+1s</button>
+      <button class="btn" data-step="5" title="Shift+→">+5s</button>
+      <span id="timeReadout" class="time">0:00.00</span>
+      <button class="btn" id="offMap" title="Hide the dot from this time until the next point">Off-map from here</button>
+    </div>
+    <p class="hint">Click the map to set the dot's position at the current video time. Drag a numbered point to move it, or click it to jump to that time. Keys: <kbd>,</kbd>/<kbd>.</kbd> frame · <kbd>←</kbd>/<kbd>→</kbd> 1s · <kbd>Shift</kbd> 5s · <kbd>K</kbd> play/pause · <kbd>Del</kbd> delete the point at this time.</p>
+
+    <table class="keys">
+      <thead><tr><th>#</th><th>Time</th><th>x</th><th>y</th><th></th></tr></thead>
+      <tbody id="keyList"></tbody>
+    </table>
+
+    <div class="row">
+      <button id="jsonToggle" class="btn">Show JSON</button>
+      <button id="downloadAll" class="btn">Download encodings.json</button>
+      <button id="clearDrafts" class="btn danger">Discard local drafts</button>
+      <span id="status" class="status"></span>
+    </div>
+    <div id="jsonPanel" hidden>
+      <textarea id="jsonText" spellcheck="false"></textarea>
+      <div class="row">
+        <button id="jsonApply" class="btn primary">Apply JSON</button>
+        <button id="jsonCopy" class="btn">Copy</button>
+        <span class="hint">Paste a single encoding or a whole <code>encodings.json</code> file, then Apply.</span>
+      </div>
+    </div>
+  </section>
+
+  <script src="app.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>

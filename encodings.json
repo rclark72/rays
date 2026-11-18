@@ -1,0 +1,5 @@
+{
+  "schema": "rays-ride-encoding/v1",
+  "map": { "src": "map.png", "width": 576, "height": 576 },
+  "encodings": []
+}
