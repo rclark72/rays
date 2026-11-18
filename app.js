@@ -17,7 +17,6 @@
  * encodings.json wraps these as { "schema", "map", "encodings": [...] }.
  */
 
-const STORAGE_KEY = 'rays.encodings.v1';
 const SCHEMA = 'rays-ride-encoding/v1';
 const FRAME = 1 / 30;            // YouTube doesn't expose fps; 30 is a sensible step size
 const SAME_TIME_EPS = FRAME / 2; // a click within half a frame of a keyframe replaces it
@@ -44,6 +43,7 @@ const state = {
   apiReady: false,
   loaded: false,
   editing: false,
+  canSave: false,
   seekTarget: null, // last requested seek time while paused (getCurrentTime lags behind seekTo)
   mapW: 576, mapH: 576,
   drag: null,
@@ -108,40 +108,46 @@ function centripetalCatmullRom(p0, p1, p2, p3, u) {
 }
 
 /* ------------------------------------------------------------------ *
- * Storage: encodings.json (shared) + localStorage drafts (per browser)
+ * Storage: encodings.json in the repo (edited via serve.py, served by Pages)
  * ------------------------------------------------------------------ */
 
 async function loadEncodings() {
-  let fromFile = [];
   try {
     const res = await fetch('encodings.json', { cache: 'no-store' });
-    if (res.ok) fromFile = (await res.json()).encodings ?? [];
+    if (res.ok) state.encodings = ((await res.json()).encodings ?? []).map(normalize);
   } catch (err) {
     console.warn('Could not load encodings.json', err);
   }
-  const byId = new Map(fromFile.map((e) => [String(e.id ?? e.videoId), normalize(e)]));
-  for (const [id, e] of Object.entries(readLocal())) {
-    if (e.deleted) byId.delete(id); else byId.set(id, normalize(e));
-  }
-  state.encodings = [...byId.values()];
 }
 
-function readLocal() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch { return {}; }
+// Editing is only available when running `python3 serve.py`, which exposes
+// /__dev and accepts PUT /encodings.json. On GitHub Pages this returns 404.
+async function detectDevServer() {
+  try { state.canSave = (await fetch('__dev', { cache: 'no-store' })).ok; }
+  catch { state.canSave = false; }
+  els.editToggle.hidden = !state.canSave;
 }
-function writeLocal(obj) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }
-  catch (err) { flash(`Couldn't save draft: ${err.message}`); }
+
+let saveTimer;
+function persist() { // debounced write of the whole file
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveFile, 300);
 }
-function persist(enc) {
-  const local = readLocal();
-  local[enc.id] = enc;
-  writeLocal(local);
-}
-function persistDelete(id) {
-  const local = readLocal();
-  local[id] = { id, deleted: true };
-  writeLocal(local);
+function persistDelete() { persist(); }
+
+async function saveFile() {
+  if (!state.canSave) return;
+  try {
+    const res = await fetch('encodings.json', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(exportFile(state.encodings)),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${await res.text()}`);
+    flash('Saved to encodings.json');
+  } catch (err) {
+    flash(`Save failed: ${err.message}`);
+  }
 }
 
 function normalize(e) {
@@ -471,14 +477,6 @@ function applyJson() {
   }
 }
 
-function downloadAll() {
-  const blob = new Blob([JSON.stringify(exportFile(state.encodings), null, 2) + '\n'], { type: 'application/json' });
-  const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: 'encodings.json' });
-  a.click();
-  URL.revokeObjectURL(a.href);
-  flash('Downloaded — replace encodings.json in the site folder to share it');
-}
-
 function onKey(e) {
   if (!state.editing || e.target.matches('input, textarea, select')) return;
   const steps = { ',': -FRAME, '.': FRAME, ArrowLeft: e.shiftKey ? -5 : -1, ArrowRight: e.shiftKey ? 5 : 1 };
@@ -570,12 +568,6 @@ function wire() {
     try { await navigator.clipboard.writeText(els.jsonText.value); flash('Copied'); }
     catch { els.jsonText.select(); flash('Press ⌘C to copy'); }
   });
-  $('#downloadAll').addEventListener('click', downloadAll);
-  $('#clearDrafts').addEventListener('click', () => {
-    if (!confirm('Discard all edits saved in this browser and reload from encodings.json?')) return;
-    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
-    location.reload();
-  });
 
   document.addEventListener('keydown', onKey);
 
@@ -590,7 +582,7 @@ function wire() {
 
 async function init() {
   wire();
-  await loadEncodings();
+  await Promise.all([loadEncodings(), detectDevServer()]);
   state.loaded = true;
   selectEncoding(new URLSearchParams(location.search).get('ride'));
   requestAnimationFrame(tick);

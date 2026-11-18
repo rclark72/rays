@@ -85,3 +85,38 @@ input, select, textarea {
 .keys .wrap { max-height: 240px; overflow: auto; }
 
 #jsonText { width: 100%; min-height: 260px; font: 12.5px/1.4 ui-monospace, Menlo, monospace; margin-bottom: 8px; }
+
+/* ---- Mobile-friendly player ---- */
+html { -webkit-text-size-adjust: 100%; }
+.map img, #player { -webkit-touch-callout: none; }
+
+/* Phones, portrait */
+@media (max-width: 600px) {
+  .topbar {
+    gap: 8px 12px; padding: 10px 12px;
+    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(12px, env(safe-area-inset-right));
+  }
+  .topbar h1 { font-size: 16px; flex: 1 1 100%; margin: 0; }
+  .ride-pick { flex: 1 1 0; min-width: 0; }
+  .ride-pick select { flex: 1; min-width: 0; width: 100%; }
+  .topbar .btn { flex: 0 0 auto; }
+  /* 16px stops iOS Safari zooming in when a control is focused */
+  input, select, textarea { font-size: 16px; }
+  .btn { min-height: 40px; }
+
+  .stage { gap: 10px; padding: 10px 0 12px; }
+  .video-wrap { border-radius: 0; }
+  .map-wrap { padding: 0 12px; }
+  .editor { margin: 0 12px 20px; padding: 12px; }
+}
+
+/* Phones, landscape: video and map side by side, sized to the screen height */
+@media (orientation: landscape) and (max-height: 500px) {
+  .topbar { padding: 6px 12px; gap: 12px; }
+  .topbar h1 { font-size: 15px; }
+  .stage { grid-template-columns: minmax(0, 1fr) auto; padding: 8px 12px; gap: 12px; }
+  .map-wrap { padding: 0; }
+  .map { width: calc(100dvh - 70px); max-width: 100%; }
+}
+[hidden] { display: none !important; }

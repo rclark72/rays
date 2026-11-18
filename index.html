@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Ride Tracker</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,7 +13,7 @@
       <span>Ride</span>
       <select id="rideSelect"></select>
     </label>
-    <button id="editToggle" class="btn">Edit encodings</button>
+    <button id="editToggle" class="btn" hidden>Edit encodings</button>
   </header>
 
   <main class="stage">
@@ -72,8 +72,6 @@
 
     <div class="row">
       <button id="jsonToggle" class="btn">Show JSON</button>
-      <button id="downloadAll" class="btn">Download encodings.json</button>
-      <button id="clearDrafts" class="btn danger">Discard local drafts</button>
       <span id="status" class="status"></span>
     </div>
     <div id="jsonPanel" hidden>
